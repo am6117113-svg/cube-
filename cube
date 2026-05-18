@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cube Cluster Game</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #1a1a1a;
+            font-family: Arial, sans-serif;
+        }
+        #gameCanvas {
+            border: 3px solid #fff;
+            background-color: #222;
+        }
+        .info {
+            color: #fff;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="info">Score: <span id="scoreText">0</span> | Use Arrow Keys to Move</div>
+    <canvas id="gameCanvas" width="800" height="500"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreText = document.getElementById('scoreText');
+
+        // Player Cube
+        const player = {
+            x: 400,
+            y: 250,
+            size: 30,
+            speed: 7,
+            color: '#00ccff'
+        };
+
+        // Array to hold collected cubes (cluster)
+        let cluster = [];
+        let score = 0;
+
+        // Food cubes to collect
+        let foods = [];
+        const foodSize = 15;
+        const totalFoods = 10;
+
+        // Generate random food cubes
+        function createFood() {
+            foods = [];
+            for (let i = 0; i < totalFoods; i++) {
+                foods.push({
+                    x: Math.floor(Math.random() * (canvas.width - foodSize)),
+                    y: Math.floor(Math.random() * (canvas.height - foodSize)),
+                    color: '#ff3366'
+                });
+            }
+        }
+
+        // Draw everything
+        function draw() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw food
+            foods.forEach(food => {
+                ctx.fillStyle = food.color;
+                ctx.fillRect(food.x, food.y, foodSize, foodSize);
+            });
+
+            // Draw player
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.size, player.size);
+
+            // Draw cluster cubes
+            cluster.forEach(cube => {
+                ctx.fillStyle = cube.color;
+                ctx.fillRect(cube.x, cube.y, player.size * 0.8, player.size * 0.8);
+            });
+        }
+
+        // Move player
+        function movePlayer(direction) {
+            switch (direction) {
+                case 'up':
+                    if (player.y > 0) player.y -= player.speed;
+                    break;
+                case 'down':
+                    if (player.y < canvas.height - player.size) player.y += player.speed;
+                    break;
+                case 'left':
+                    if (player.x > 0) player.x -= player.speed;
+                    break;
+                case 'right':
+                    if (player.x < canvas.width - player.size) player.x += player.speed;
+                    break;
+            }
+        }
+
+        // Check collection of food
+        function checkCollection() {
+            for (let i = 0; i < foods.length; i++) {
+                let f = foods[i];
+                if (
+                    player.x < f.x + foodSize &&
+                    player.x + player.size > f.x &&
+                    player.y < f.y + foodSize &&
+                    player.y + player.size > f.y
+                ) {
+                    // Add to cluster
+                    cluster.push({
+                        x: player.x,
+                        y: player.y,
+                        color: '#66ff66'
+                    });
+                    foods.splice(i, 1); // Remove collected food
+                    score++;
+                    scoreText.innerText = score;
+                    i--;
+
+                    // Spawn new food
+                    foods.push({
+                        x: Math.floor(Math.random() * (canvas.width - foodSize)),
+                        y: Math.floor(Math.random() * (canvas.height - foodSize)),
+                        color: '#ff3366'
+                    });
+                }
+            }
+        }
+
+        // Update cluster positions (follow leader)
+        function updateCluster() {
+            for (let i = cluster.length - 1; i > 0; i--) {
+                cluster[i].x = cluster[i - 1].x;
+                cluster[i].y = cluster[i - 1].y;
+            }
+            if (cluster.length > 0) {
+                cluster[0].x = player.x + 5;
+                cluster[0].y = player.y + 5;
+            }
+        }
+
+        // Key controls
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp') movePlayer('up');
+            if (e.key === 'ArrowDown') movePlayer('down');
+            if (e.key === 'ArrowLeft') movePlayer('left');
+            if (e.key === 'ArrowRight') movePlayer('right');
+            
+            updateCluster();
+            checkCollection();
+            draw();
+        });
+
+        // Start game
+        createFood();
+        draw();
+    </script>
+</body>
+</html>
